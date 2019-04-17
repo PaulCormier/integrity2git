@@ -2,6 +2,7 @@
 
 import os, sys, re, time, platform, shutil
 import subprocess
+import locale
 from datetime import datetime
 from git import Repo
 
@@ -41,7 +42,7 @@ def inline_data(filename, code = 'M', mode = '644'):
     export_data(content)
 
 def si(command):
-    #print("%s %s" % (datetime.now().strftime("%H:%M:%S"), command), file=sys.stderr)
+    print("%s %s" % (datetime.now().strftime("%H:%M:%S"), command), file=sys.stderr)
     for i in range(20):
         # subprocess.getstatusoutput() below
         try:
@@ -74,6 +75,8 @@ def retrieve_revisions(devpath=False):
     versions = versions[1:]
     version_re = re.compile('[0-9]([\.0-9])+')
 
+    setup_dateformat()
+
     revisions = []
     for version in versions:
         match = version_re.match(version)
@@ -82,7 +85,7 @@ def retrieve_revisions(devpath=False):
             revision = {}
             revision["number"] = version_cols[0]
             revision["author"] = version_cols[1]
-            revision["seconds"] = int(time.mktime(datetime.strptime(version_cols[2], "%d.%m.%Y %X").timetuple()))
+            revision["seconds"] = int(time.mktime(datetime.strptime(version_cols[2], "%x %X").timetuple()))
             revision["tags"] = [ v for v in version_cols[5].split(",") if v ]
             revision["description"] = version_cols[6]
             revisions.append(revision)
@@ -219,6 +222,9 @@ def check_tags_for_uniqueness(all_revisions):
             print(str(len(revisions)) + " revisions found for tag " + tag + ": " + ", ".join([ r["number"] for r in revisions ]), file=sys.stderr)
             error = True
     assert not error, "duplicate revisions"
+
+def setup_dateformat():
+    locale.setlocale(locale.LC_ALL, '')
 
 all_revisions = retrieve_revisions()
 revisions = all_revisions[:]
