@@ -24,6 +24,9 @@ project = sys.argv[1]
 def print_out(data):
     print(data, file=stdout)
 
+def trace(message):
+    print("%s %s" % (datetime.now().strftime("%H:%M:%S"), message), file=sys.stderr)
+
 def export_string(string):
     print_out('data %d\n%s' % (len(string), string))
 
@@ -42,7 +45,7 @@ def inline_data(filename, code = 'M', mode = '644'):
     export_data(content)
 
 def si(command):
-    print("%s %s" % (datetime.now().strftime("%H:%M:%S"), command), file=sys.stderr)
+    trace(command)
     for i in range(20):
         # subprocess.getstatusoutput() below
         try:
@@ -162,7 +165,8 @@ def export_to_git(revisions, done_count, devpath=False, ancestor=False, ancestor
     print_out('checkpoint')
     return done_count
 
-repo = Repo(".")
+repo = Repo(os.getcwd())
+trace("Git directory: %s" % repo.common_dir)
 def find_continuation_point(done_count, revisions):
     if not repo.head.is_valid(): return done_count, revisions
     last_commit_date = repo.head.commit.committed_date
@@ -205,7 +209,7 @@ def create_marks(master_revisions, devpaths3):
         if "ancestorDate" in master_revisions[0]: # we are continuing master
             convert_revision_to_mark(master_revisions[0]["ancestor"], False, master_revisions[0]["ancestorDate"])
         for revision in master_revisions:
-            convert_revision_to_mark(revision["number"], True, ancestorDate)
+            convert_revision_to_mark(revision["number"], True)
     for devpath3 in devpaths3:
         convert_revision_to_mark(devpath3["info"][1], False, devpath3["ancestorDate"])
         for revision in devpath3["revisions"]:
@@ -251,7 +255,7 @@ for devpath2 in devpaths2:
     assert len(ancestorDate) == 1, "Not exactly one ancestor with revision " + ancestor + " found, but " + str(len(ancestorDate))
     devpath3["ancestorDate"] = ancestorDate[0]["seconds"]
     devpaths3.append(devpath3)
-
+trace("Found %d revisions and %d devapaths" % (len(revisions), sum([ len(dp["revisions"]) for dp in devpaths3 ]) ))
 if len(revisions) == 0 and sum([ len(dp["revisions"]) for dp in devpaths3 ]) == 0:
     exit(0)
 
