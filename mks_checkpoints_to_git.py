@@ -76,7 +76,7 @@ def retrieve_revisions(devpath=False):
     versions = si('si viewprojecthistory %s --quiet --rfilter=devpath:%s --project="%s"' % (additional_si_args, devpath, project))
     versions = versions.split('\n')
     versions = versions[1:]
-    version_re = re.compile('[0-9]([\.0-9])+')
+    version_re = re.compile('^\d+(\.\d+)+\t')
 
     setup_dateformat()
 
