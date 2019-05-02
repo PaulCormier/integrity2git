@@ -123,7 +123,7 @@ def export_to_git(revisions, done_count, devpath=False, ancestor=False, ancestor
         ancestorDate = revisions[0]["ancestorDate"]
 
     for revision in revisions:
-        print("%d of %d (%f%%)" % (done_count, total_revision_count, done_count/total_revision_count*100), file=sys.stderr)
+        print("%d of %d (%0.2f%%)" % (done_count+1, total_revision_count, done_count/total_revision_count*100), file=sys.stderr)
         done_count += 1
         
         mark = marks[revision["number"]]
