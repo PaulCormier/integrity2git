@@ -21,6 +21,9 @@ stdout = open(sys.__stdout__.fileno(),  # no wrapper around stdout which does LF
 additional_si_args = ""
 project = sys.argv[1]
 
+if not project.endswith("/project.pj"):
+    project += "/project.pj"
+
 def print_out(data):
     print(data, file=stdout)
 
@@ -117,6 +120,7 @@ def export_to_git(revisions, done_count, devpath=False, ancestor=False, ancestor
     abs_sandbox_path = os.getcwd()
     abs_sandbox_path = abs_sandbox_path.replace("\\", "/")
     integrity_file = os.path.basename(project)
+    git_folder_re = re.compile("\.git(\\\|$)")  #any path named .git, with or without child elements. But will not match .gitignore
     
     if "ancestorDate" in revisions[0]:
         ancestor = revisions[0]["ancestor"]
@@ -149,7 +153,8 @@ def export_to_git(revisions, done_count, devpath=False, ancestor=False, ancestor
                     fullfile = os.path.join(dir[0], filename)[2:]
                 if (fullfile.find('.pj') != -1):
                     continue
-                if (fullfile[0:4] == ".git"):
+                #if (fullfile[0:4] == ".git"):
+                if git_folder_re.search(fullfile):
                     continue
                 if (fullfile.find('mks_checkpoints_to_git') != -1):
                     continue
@@ -160,8 +165,8 @@ def export_to_git(revisions, done_count, devpath=False, ancestor=False, ancestor
             print_out('from %s' % mark)
             print_out('tagger %s <> %d +0000' % (revision["author"], revision["seconds"]))
             export_string("") # Tag message
-        #print_out('checkpoint')
 
+        re.purge()
     print_out('checkpoint')
     return done_count
 
