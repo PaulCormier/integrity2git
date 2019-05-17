@@ -24,6 +24,9 @@ project = sys.argv[1]
 if not project.endswith("/project.pj"):
     project += "/project.pj"
 
+def reencode(string):
+    return string.encode("utf-8").decode(sys.__stdout__.encoding)
+    
 def print_out(data):
     print(data, file=stdout)
 
@@ -31,7 +34,8 @@ def trace(message):
     print("%s %s" % (datetime.now().strftime("%H:%M:%S"), message), file=sys.stderr)
 
 def export_string(string):
-    print_out('data %d\n%s' % (len(string), string))
+    string = reencode(string)
+    print_out('data %d\n%s' % (len(string), (string)))
 
 def export_data(string):
     stdout.write('data %d\n' % len(string))
@@ -44,7 +48,7 @@ def inline_data(filename, code = 'M', mode = '644'):
     if platform.system() == 'Windows':
         #this is a hack'ish way to get windows path names to work git (is there a better way to do this?)
         filename = filename.replace('\\','/')
-    print_out("%s %s inline %s" % (code, mode, filename))
+    print_out("%s %s inline %s" % (code, mode, reencode(filename)))
     export_data(content)
 
 def si(command):
