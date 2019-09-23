@@ -13,7 +13,7 @@ assert os.path.isdir(".git"), "Call git init first"
 stdout = open(sys.__stdout__.fileno(),  # no wrapper around stdout which does LF translation
               mode=sys.__stdout__.mode,
               buffering=1,
-              encoding=sys.__stdout__.encoding,
+              encoding='utf8',  # Required for git fast-import
               errors=sys.__stdout__.errors,
               newline='\n',
               closefd=False)
