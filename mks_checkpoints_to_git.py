@@ -21,6 +21,14 @@ stdout = open(sys.__stdout__.fileno(),  # no wrapper around stdout which does LF
 additional_si_args = ""
 project = sys.argv[1]
 
+locale.setlocale(locale.LC_ALL, '')
+# Check for a date format passed as a parameter
+if sys.argv[2] == '--date-format':
+    date_format = sys.argv[3]
+else:
+    date_format = '%x %X'
+
+
 if not project.endswith("/project.pj"):
     project += "/project.pj"
 
@@ -85,8 +93,6 @@ def retrieve_revisions(devpath=False):
     versions = versions[1:]
     version_re = re.compile('^\d+(\.\d+)+\t')
 
-    setup_dateformat()
-
     revisions = []
     for version in versions:
         match = version_re.match(version)
@@ -95,7 +101,7 @@ def retrieve_revisions(devpath=False):
             revision = {}
             revision["number"] = version_cols[0]
             revision["author"] = version_cols[1]
-            revision["seconds"] = int(time.mktime(datetime.strptime(version_cols[2], "%x %X").timetuple()))
+            revision["seconds"] = int(time.mktime(datetime.strptime(version_cols[2], date_format).timetuple()))
             revision["tags"] = [ v for v in version_cols[5].split(",") if v ]
             revision["description"] = version_cols[6]
             revisions.append(revision)
@@ -208,7 +214,7 @@ def create_marks(master_revisions, devpaths3):
             return mark
         else:
             assert date, "No date given, cannot find commit"
-            date = datetime.strftime(datetime.fromtimestamp(date), "%d.%m.%Y %X")
+            date = datetime.strftime(datetime.fromtimestamp(date), date_format)
             commits = [c for c in repo.iter_commits("--all", before=date, after=date)]
             assert len(commits) == 1, "No commit found for date " + date
             marks[revision] = commits[0].hexsha
@@ -235,9 +241,6 @@ def check_tags_for_uniqueness(all_revisions):
             print(str(len(revisions)) + " revisions found for tag " + tag + ": " + ", ".join([ r["number"] for r in revisions ]), file=sys.stderr)
             error = True
     assert not error, "duplicate revisions"
-
-def setup_dateformat():
-    locale.setlocale(locale.LC_ALL, '')
 
 all_revisions = retrieve_revisions()
 revisions = all_revisions[:]
