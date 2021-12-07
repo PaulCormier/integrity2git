@@ -23,10 +23,11 @@ project = sys.argv[1]
 
 locale.setlocale(locale.LC_ALL, '')
 # Check for a date format passed as a parameter
-if sys.argv[2] == '--date-format':
-    date_format = sys.argv[3]
+if len(sys.argv) > 2:
+    if sys.argv[2] == '--date-format':
+        date_format = sys.argv[3]
 else:
-    date_format = '%x %X'
+    date_format = '%d-%b-%Y %I:%M:%S %p'
 
 
 if not project.endswith("/project.pj"):
@@ -141,12 +142,12 @@ def export_to_git(revisions, done_count, devpath=False, ancestor=False, ancestor
         done_count += 1
         
         mark = marks[revision["number"]]
-        si('si retargetsandbox %s --quiet --project="%s" --projectRevision=%s %s/%s' % (additional_si_args, project, revision["number"], abs_sandbox_path, integrity_file))
-        si('si resync --yes --recurse %s --quiet --sandbox=%s/%s' % (additional_si_args, abs_sandbox_path, integrity_file))
+        si('si retargetsandbox %s --quiet --project="%s" --projectRevision=%s "%s/%s"' % (additional_si_args, project, revision["number"], abs_sandbox_path, integrity_file))
+        si('si resync --yes --recurse %s --quiet --sandbox="%s/%s"' % (additional_si_args, abs_sandbox_path, integrity_file))
         if devpath:
             print_out('commit refs/heads/devpath/%s' % devpath)
         else:
-            print_out('commit refs/heads/master')
+            print_out('commit refs/heads/main')
         print_out('mark %s' % mark)
         print_out('committer %s <> %d +0000' % (revision["author"], revision["seconds"]))
         export_string(revision["description"])
@@ -288,7 +289,7 @@ if not os.path.isdir("tmp"):
     si('si createsandbox %s --populate --recurse --quiet --project="%s" --projectRevision=%s tmp' % (additional_si_args, project, revision["number"]))
 
 os.chdir('tmp')
-done_count = export_to_git(revisions, done_count) #export master branch first!!
+done_count = export_to_git(revisions, done_count) #export main branch first!!
 
 for devpath3 in devpaths3:
     ancestor = devpath3["info"][1]
