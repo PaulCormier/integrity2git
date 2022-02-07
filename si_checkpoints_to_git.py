@@ -1,16 +1,12 @@
 #!/usr/bin/python
 
-import os, sys, re, time, platform, shutil
+import os, sys, re, time, platform, shutil, argparse
 import subprocess
 import locale
 from datetime import datetime
 from git import Repo
 
-# Verify that the current directory is a git repo
-assert os.path.isdir(".git"), "Call git init first"
-
 # Setup the output stream with the appropriate setting to be streamed into git fast-import
-
 stdout = open(sys.__stdout__.fileno(),  # no wrapper around stdout which does LF translation
               mode=sys.__stdout__.mode,
               buffering=1,
@@ -20,23 +16,47 @@ stdout = open(sys.__stdout__.fileno(),  # no wrapper around stdout which does LF
               closefd=False)
 
 # Collect command line arguments (project, date format, include/exclude filters, etc.)
+parser = argparse.ArgumentParser()
+parser.add_argument("project", default="",
+                    help="The si project name to be processed.")
+parser.add_argument("--include-name", default=[], metavar="FILTER", action="append",
+                    help="An include expression to be passed to the si command. Evaluated against the file names. May be added multiple times.")
+parser.add_argument("--include-path", default=[], metavar="FILTER", action="append",
+                    help="An include expression to be passed to the si command. Evaluated against the directory names. May be added multiple times.")
+parser.add_argument("--exclude-name", default=[], metavar="FILTER", action="append",
+                    help="An exclude expression to be passed to the si command. Evaluated against the file names. May be added multiple times.")
+parser.add_argument("--exclude-path", default=[], metavar="FILTER", action="append",
+                    help="An exclude expression to be passed to the si command. Evaluated against the directory names. May be added multiple times.")
+parser.add_argument("--date-format", default="%d-%b-%Y %I:%M:%S %p", metavar="FORMAT",
+                    help="The python date format string used to interpret the si dates. Default: \"%%d-%%b-%%Y %%I:%%M:%%S %%p\"")
+parser.add_argument("--additional-si-args", default="", metavar="ARGUMENTS",
+                    help="Additional arguments to be passed to every call to the si command.")
 
-# Additional arguments to be passed to the si command
-additional_si_args = ""
+args = parser.parse_args()
 
 # The name of the si project being operated on
-project = sys.argv[1]
+project = args.project
 if not project.endswith("/project.pj"):
     project += "/project.pj"
+if not project.startswith("/"):
+    project = "/" + project
+
+# Setup the scope expression
+scope = " ".join(["--scope=\"name:" + incl + "\"" for incl in args.include_name] 
+               + ["--scope=\"name:!" + excl + "\"" for excl in args.exclude_name] 
+               + ["--scope=\"path:" + incl + "\"" for incl in args.include_path] 
+               + ["--scope=\"path:!" + excl + "\"" for excl in args.exclude_path])
+
+# The date format used to parse the timestamps from si
+date_format = args.date_format
+
+# Additional arguments to be passed to the si command
+additional_si_args = args.additional_si_args
 
 locale.setlocale(locale.LC_ALL, '')
 
-# Check for a date format passed as a parameter
-if len(sys.argv) > 2:
-    if sys.argv[2] == '--date-format':
-        date_format = sys.argv[3]
-else:
-    date_format = '%d-%b-%Y %I:%M:%S %p'
+# Verify that the current directory is a git repo
+assert os.path.isdir(".git"), "Call git init first"
 
 def trace(message):
     """ Print a message to the standard error output stream. """
@@ -344,7 +364,7 @@ if not os.path.isdir("tmp"):
                 revision = devpath3["revisions"][0]
                 break
 
-    si('si createsandbox %s --populate --recurse --quiet --project="%s" --projectRevision=%s tmp' % (additional_si_args, project, revision["number"]))
+    si('si createsandbox %s --populate --recurse --quiet --project="%s" --projectRevision=%s %s tmp' % (additional_si_args, project, revision["number"], scope))
 
 # Switch to the temporary sandbox
 os.chdir('tmp')
