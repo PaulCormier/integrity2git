@@ -10,7 +10,6 @@ from git import Repo
 stdout = open(sys.__stdout__.fileno(),  # no wrapper around stdout which does LF translation
               mode=sys.__stdout__.mode,
               buffering=1,
-              encoding='utf8',  # Required for git fast-import
               errors=sys.__stdout__.errors,
               newline='\n',
               closefd=False)
@@ -64,7 +63,10 @@ def trace(message):
 
 ### Source Integrity Methods ###
 def reencode(string):
-    """ Re-encode a string as UTF-8. """
+    """ 
+    Encode the UTF-8 bytes of a string as the system default encoding.
+    This ensures the output is correctly encoded for git.
+    """
     return string.encode("utf-8").decode(sys.__stdout__.encoding)
     
 def print_out(data):
@@ -118,7 +120,7 @@ def si(command):
     else:
         print_out('checkpoint')
         raise Exception("Command failed")
-    return data.decode("cp850")
+    return data.decode(sys.__stdout__.encoding)
     
 def retrieve_revisions(devpath=False):
     """ 
